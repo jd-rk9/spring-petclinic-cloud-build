@@ -1,14 +1,19 @@
 # cloudbuild.yaml
 steps:
-# 1. Build the Docker image
+# 1. Build the application JAR using Maven
+- name: 'maven:3.9-eclipse-temurin-17' # Use a standard Maven image
+  entrypoint: 'mvn'
+  args: ['package', '-DskipTests']
+
+# 2. Build the Docker image
 - name: 'gcr.io/cloud-builders/docker'
   args: ['build', '-t', '${_AR_HOST}/${PROJECT_ID}/${_REPO_NAME}/petclinic:$SHORT_SHA', '.']
 
-# 2. Push the image to Artifact Registry
+# 3. Push the image to Artifact Registry
 - name: 'gcr.io/cloud-builders/docker'
   args: ['push', '${_AR_HOST}/${PROJECT_ID}/${_REPO_NAME}/petclinic:$SHORT_SHA']
 
-# 3. (Optional but recommended) Deploy to GKE
+# 4. (Optional but recommended) Deploy to GKE
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
   entrypoint: gcloud
   args:
