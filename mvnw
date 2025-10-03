@@ -1,5 +1,5 @@
 #!/bin/sh
-# ----------------------------------------------------------------------------
+#
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -8,7 +8,7 @@
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
 #
-#    https://www.apache.org/licenses/LICENSE-2.0
+#   https://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
@@ -16,244 +16,469 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-# ----------------------------------------------------------------------------
-
-# ----------------------------------------------------------------------------
-# Apache Maven Wrapper startup batch script, version 3.3.2
 #
-# Optional ENV vars
-# -----------------
-#   JAVA_HOME - location of a JDK home dir, required when download maven via java source
+
+# -----------------------------------------------------------------------------
+# Apache Maven Wrapper startup script, version 3.3.2
+#
+# Optional ENV vars:
 #   MVNW_REPOURL - repo url base for downloading maven distribution
-#   MVNW_USERNAME/MVNW_PASSWORD - user and password for downloading maven
-#   MVNW_VERBOSE - true: enable verbose log; debug: trace the mvnw script; others: silence the output
-# ----------------------------------------------------------------------------
+#   MVNW_USERNAME - username for downloading maven distribution
+#   MVNW_PASSWORD - password for downloading maven distribution
+#   MVNW_VERBOSE - true: enable verbose log; others: silence the output
+# -----------------------------------------------------------------------------
 
-set -euf
-[ "${MVNW_VERBOSE-}" != debug ] || set -x
+set -e
 
-# OS specific support.
-native_path() { printf %s\\n "$1"; }
-case "$(uname)" in
-CYGWIN* | MINGW*)
-  [ -z "${JAVA_HOME-}" ] || JAVA_HOME="$(cygpath --unix "$JAVA_HOME")"
-  native_path() { cygpath --path --windows "$1"; }
-  ;;
-esac
+MAVEN_WRAPPER_JAR_FILENAME=".mvn/wrapper/maven-wrapper.jar"
 
-# set JAVACMD and JAVACCMD
-set_java_home() {
-  # For Cygwin and MinGW, ensure paths are in Unix format before anything is touched
-  if [ -n "${JAVA_HOME-}" ]; then
-    if [ -x "$JAVA_HOME/jre/sh/java" ]; then
-      # IBM's JDK on AIX uses strange locations for the executables
-      JAVACMD="$JAVA_HOME/jre/sh/java"
-      JAVACCMD="$JAVA_HOME/jre/sh/javac"
-    else
-      JAVACMD="$JAVA_HOME/bin/java"
-      JAVACCMD="$JAVA_HOME/bin/javac"
+if [ -n "$MVNW_VERBOSE" ]; then
+  set -x
+fi
 
-      if [ ! -x "$JAVACMD" ] || [ ! -x "$JAVACCMD" ]; then
-        echo "The JAVA_HOME environment variable is not defined correctly, so mvnw cannot run." >&2
-        echo "JAVA_HOME is set to \"$JAVA_HOME\", but \"\$JAVA_HOME/bin/java\" or \"\$JAVA_HOME/bin/javac\" does not exist." >&2
-        return 1
-      fi
-    fi
-  else
-    JAVACMD="$(
-      'set' +e
-      'unset' -f command 2>/dev/null
-      'command' -v java
-    )" || :
-    JAVACCMD="$(
-      'set' +e
-      'unset' -f command 2>/dev/null
-      'command' -v javac
-    )" || :
-
-    if [ ! -x "${JAVACMD-}" ] || [ ! -x "${JAVACCMD-}" ]; then
-      echo "The java/javac command does not exist in PATH nor is JAVA_HOME set, so mvnw cannot run." >&2
-      return 1
-    fi
-  fi
-}
-
-# hash string like Java String::hashCode
-hash_string() {
-  str="${1:-}" h=0
-  while [ -n "$str" ]; do
-    char="${str%"${str#?}"}"
-    h=$(((h * 31 + $(LC_CTYPE=C printf %d "'$char")) % 4294967296))
-    str="${str#?}"
+if [ -z "$MAVEN_PROJECTBASEDIR" ]; then
+  # The search for the project base directory will begin from this script's directory.
+  SCRIPT_DIR="$(cd -- "$(dirname -- "$0")" >/dev/null 2>&1 && pwd)"
+  MAVEN_PROJECTBASEDIR_CANDIDATE="$(cd -- "${SCRIPT_DIR}" >/dev/null 2>&1 && pwd)"
+  while [ ! -f "${MAVEN_PROJECTBASEDIR_CANDIDATE}/${MAVEN_WRAPPER_JAR_FILENAME}" ] && [ "${MAVEN_PROJECTBASEDIR_CANDIDATE}" != "/" ]; do
+    MAVEN_PROJECTBASEDIR_CANDIDATE="$(cd -- "${MAVEN_PROJECTBASEDIR_CANDIDATE}/.." >/dev/null 2>&1 && pwd)"
   done
-  printf %x\\n $h
-}
-
-verbose() { :; }
-[ "${MVNW_VERBOSE-}" != true ] || verbose() { printf %s\\n "${1-}"; }
-
-die() {
-  printf %s\\n "$1" >&2
-  exit 1
-}
-
-trim() {
-  # MWRAPPER-139:
-  #   Trims trailing and leading whitespace, carriage returns, tabs, and linefeeds.
-  #   Needed for removing poorly interpreted newline sequences when running in more
-  #   exotic environments such as mingw bash on Windows.
-  printf "%s" "${1}" | tr -d '[:space:]'
-}
-
-# parse distributionUrl and optional distributionSha256Sum, requires .mvn/wrapper/maven-wrapper.properties
-while IFS="=" read -r key value; do
-  case "${key-}" in
-  distributionUrl) distributionUrl=$(trim "${value-}") ;;
-  distributionSha256Sum) distributionSha256Sum=$(trim "${value-}") ;;
-  esac
-done <"${0%/*}/.mvn/wrapper/maven-wrapper.properties"
-[ -n "${distributionUrl-}" ] || die "cannot read distributionUrl property in ${0%/*}/.mvn/wrapper/maven-wrapper.properties"
-
-case "${distributionUrl##*/}" in
-maven-mvnd-*bin.*)
-  MVN_CMD=mvnd.sh _MVNW_REPO_PATTERN=/maven/mvnd/
-  case "${PROCESSOR_ARCHITECTURE-}${PROCESSOR_ARCHITEW6432-}:$(uname -a)" in
-  *AMD64:CYGWIN* | *AMD64:MINGW*) distributionPlatform=windows-amd64 ;;
-  :Darwin*x86_64) distributionPlatform=darwin-amd64 ;;
-  :Darwin*arm64) distributionPlatform=darwin-aarch64 ;;
-  :Linux*x86_64*) distributionPlatform=linux-amd64 ;;
-  *)
-    echo "Cannot detect native platform for mvnd on $(uname)-$(uname -m), use pure java version" >&2
-    distributionPlatform=linux-amd64
-    ;;
-  esac
-  distributionUrl="${distributionUrl%-bin.*}-$distributionPlatform.zip"
-  ;;
-maven-mvnd-*) MVN_CMD=mvnd.sh _MVNW_REPO_PATTERN=/maven/mvnd/ ;;
-*) MVN_CMD="mvn${0##*/mvnw}" _MVNW_REPO_PATTERN=/org/apache/maven/ ;;
-esac
-
-# apply MVNW_REPOURL and calculate MAVEN_HOME
-# maven home pattern: ~/.m2/wrapper/dists/{apache-maven-<version>,maven-mvnd-<version>-<platform>}/<hash>
-[ -z "${MVNW_REPOURL-}" ] || distributionUrl="$MVNW_REPOURL$_MVNW_REPO_PATTERN${distributionUrl#*"$_MVNW_REPO_PATTERN"}"
-distributionUrlName="${distributionUrl##*/}"
-distributionUrlNameMain="${distributionUrlName%.*}"
-distributionUrlNameMain="${distributionUrlNameMain%-bin}"
-MAVEN_USER_HOME="${MAVEN_USER_HOME:-${HOME}/.m2}"
-MAVEN_HOME="${MAVEN_USER_HOME}/wrapper/dists/${distributionUrlNameMain-}/$(hash_string "$distributionUrl")"
-
-exec_maven() {
-  unset MVNW_VERBOSE MVNW_USERNAME MVNW_PASSWORD MVNW_REPOURL || :
-  exec "$MAVEN_HOME/bin/$MVN_CMD" "$@" || die "cannot exec $MAVEN_HOME/bin/$MVN_CMD"
-}
-
-if [ -d "$MAVEN_HOME" ]; then
-  verbose "found existing MAVEN_HOME at $MAVEN_HOME"
-  exec_maven "$@"
-fi
-
-case "${distributionUrl-}" in
-*?-bin.zip | *?maven-mvnd-?*-?*.zip) ;;
-*) die "distributionUrl is not valid, must match *-bin.zip or maven-mvnd-*.zip, but found '${distributionUrl-}'" ;;
-esac
-
-# prepare tmp dir
-if TMP_DOWNLOAD_DIR="$(mktemp -d)" && [ -d "$TMP_DOWNLOAD_DIR" ]; then
-  clean() { rm -rf -- "$TMP_DOWNLOAD_DIR"; }
-  trap clean HUP INT TERM EXIT
-else
-  die "cannot create temp dir"
-fi
-
-mkdir -p -- "${MAVEN_HOME%/*}"
-
-# Download and Install Apache Maven
-verbose "Couldn't find MAVEN_HOME, downloading and installing it ..."
-verbose "Downloading from: $distributionUrl"
-verbose "Downloading to: $TMP_DOWNLOAD_DIR/$distributionUrlName"
-
-# select .zip or .tar.gz
-if ! command -v unzip >/dev/null; then
-  distributionUrl="${distributionUrl%.zip}.tar.gz"
-  distributionUrlName="${distributionUrl##*/}"
-fi
-
-# verbose opt
-__MVNW_QUIET_WGET=--quiet __MVNW_QUIET_CURL=--silent __MVNW_QUIET_UNZIP=-q __MVNW_QUIET_TAR=''
-[ "${MVNW_VERBOSE-}" != true ] || __MVNW_QUIET_WGET='' __MVNW_QUIET_CURL='' __MVNW_QUIET_UNZIP='' __MVNW_QUIET_TAR=v
-
-# normalize http auth
-case "${MVNW_PASSWORD:+has-password}" in
-'') MVNW_USERNAME='' MVNW_PASSWORD='' ;;
-has-password) [ -n "${MVNW_USERNAME-}" ] || MVNW_USERNAME='' MVNW_PASSWORD='' ;;
-esac
-
-if [ -z "${MVNW_USERNAME-}" ] && command -v wget >/dev/null; then
-  verbose "Found wget ... using wget"
-  wget ${__MVNW_QUIET_WGET:+"$__MVNW_QUIET_WGET"} "$distributionUrl" -O "$TMP_DOWNLOAD_DIR/$distributionUrlName" || die "wget: Failed to fetch $distributionUrl"
-elif [ -z "${MVNW_USERNAME-}" ] && command -v curl >/dev/null; then
-  verbose "Found curl ... using curl"
-  curl ${__MVNW_QUIET_CURL:+"$__MVNW_QUIET_CURL"} -f -L -o "$TMP_DOWNLOAD_DIR/$distributionUrlName" "$distributionUrl" || die "curl: Failed to fetch $distributionUrl"
-elif set_java_home; then
-  verbose "Falling back to use Java to download"
-  javaSource="$TMP_DOWNLOAD_DIR/Downloader.java"
-  targetZip="$TMP_DOWNLOAD_DIR/$distributionUrlName"
-  cat >"$javaSource" <<-END
-	public class Downloader extends java.net.Authenticator
-	{
-	  protected java.net.PasswordAuthentication getPasswordAuthentication()
-	  {
-	    return new java.net.PasswordAuthentication( System.getenv( "MVNW_USERNAME" ), System.getenv( "MVNW_PASSWORD" ).toCharArray() );
-	  }
-	  public static void main( String[] args ) throws Exception
-	  {
-	    setDefault( new Downloader() );
-	    java.nio.file.Files.copy( java.net.URI.create( args[0] ).toURL().openStream(), java.nio.file.Paths.get( args[1] ).toAbsolutePath().normalize() );
-	  }
-	}
-	END
-  # For Cygwin/MinGW, switch paths to Windows format before running javac and java
-  verbose " - Compiling Downloader.java ..."
-  "$(native_path "$JAVACCMD")" "$(native_path "$javaSource")" || die "Failed to compile Downloader.java"
-  verbose " - Running Downloader.java ..."
-  "$(native_path "$JAVACMD")" -cp "$(native_path "$TMP_DOWNLOAD_DIR")" Downloader "$distributionUrl" "$(native_path "$targetZip")"
-fi
-
-# If specified, validate the SHA-256 sum of the Maven distribution zip file
-if [ -n "${distributionSha256Sum-}" ]; then
-  distributionSha256Result=false
-  if [ "$MVN_CMD" = mvnd.sh ]; then
-    echo "Checksum validation is not supported for maven-mvnd." >&2
-    echo "Please disable validation by removing 'distributionSha256Sum' from your maven-wrapper.properties." >&2
-    exit 1
-  elif command -v sha256sum >/dev/null; then
-    if echo "$distributionSha256Sum  $TMP_DOWNLOAD_DIR/$distributionUrlName" | sha256sum -c >/dev/null 2>&1; then
-      distributionSha256Result=true
-    fi
-  elif command -v shasum >/dev/null; then
-    if echo "$distributionSha256Sum  $TMP_DOWNLOAD_DIR/$distributionUrlName" | shasum -a 256 -c >/dev/null 2>&1; then
-      distributionSha256Result=true
-    fi
+  if [ -f "${MAVEN_PROJECTBASEDIR_CANDIDATE}/${MAVEN_WRAPPER_JAR_FILENAME}" ]; then
+    MAVEN_PROJECTBASEDIR="${MAVEN_PROJECTBASEDIR_CANDIDATE}"
+    export MAVEN_PROJECTBASEDIR
   else
-    echo "Checksum validation was requested but neither 'sha256sum' or 'shasum' are available." >&2
-    echo "Please install either command, or disable validation by removing 'distributionSha256Sum' from your maven-wrapper.properties." >&2
-    exit 1
-  fi
-  if [ $distributionSha256Result = false ]; then
-    echo "Error: Failed to validate Maven distribution SHA-256, your Maven distribution might be compromised." >&2
-    echo "If you updated your Maven version, you need to update the specified distributionSha256Sum property." >&2
+    echo "Could not find the project base directory. Please try running this command again from the project base directory."
     exit 1
   fi
 fi
 
-# unzip and move
-if command -v unzip >/dev/null; then
-  unzip ${__MVNW_QUIET_UNZIP:+"$__MVNW_QUIET_UNZIP"} "$TMP_DOWNLOAD_DIR/$distributionUrlName" -d "$TMP_DOWNLOAD_DIR" || die "failed to unzip"
+cd -- "${MAVEN_PROJECTBASEDIR}" >/dev/null 2>&1
+
+MAVEN_WRAPPER_PROPERTIES_FILENAME=".mvn/wrapper/maven-wrapper.properties"
+
+if [ ! -f "${MAVEN_WRAPPER_PROPERTIES_FILENAME}" ]; then
+  echo "The file ${MAVEN_WRAPPER_PROPERTIES_FILENAME} does not exist."
+  exit 1
+fi
+
+load_property() {
+  # We do not want to refer to the file using a relative path,
+  # because we do not know where this script is being run from.
+  local property_file_path="${MAVEN_PROJECTBASEDIR}/${1}"
+  local property_name="${2}"
+  if [ -f "${property_file_path}" ]; then
+    # We are using sed to extract the value of the property from the properties file.
+    # The value of the property is everything after the first "=".
+    # The "[^=]*" part of the regex is used to match the property name.
+    # The "\s*=\s*" part of the regex is used to match the "=" and any surrounding whitespace.
+    # The ".*" part of the regex is used to match the value of the property.
+    # The "p" command at the end of the sed expression is used to print the matched line.
+    # The "-n" option of sed is used to suppress the default output of sed.
+    # The "1q" command at the end of the sed expression is used to quit after the first match.
+    sed -n "s/^${property_name}\s*=\s*\(.*\)/\1/p; 1q" "${property_file_path}"
+  fi
+}
+
+DISTRIBUTION_URL_PROPERTY_NAME="distributionUrl"
+DISTRIBUTION_URL="$(load_property "${MAVEN_WRAPPER_PROPERTIES_FILENAME}" "${DISTRIBUTION_URL_PROPERTY_NAME}")"
+
+if [ -z "${DISTRIBUTION_URL}" ]; then
+  # The "distributionUrl" property is not set in the properties file.
+  # We will fall back to the default value.
+  # The default value is the same as the one used by the Maven Wrapper plugin.
+  DISTRIBUTION_URL="https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/3.8.8/apache-maven-3.8.8-bin.zip"
+fi
+
+if [ -n "$MVNW_REPOURL" ]; then
+  # The user has specified a custom repository URL.
+  # We will replace the host part of the distribution URL with the custom repository URL.
+  # The "sed" command is used to replace the host part of the URL.
+  # The "[^/]*" part of the regex is used to match the protocol.
+  # The "[^/]*" part of the regex is used to match the host.
+  # The ".*" part of the regex is used to match the rest of the URL.
+  # The "\1" and "\3" are used to keep the protocol and the rest of the URL.
+  # The "${MVNW_REPOURL}" is used to replace the host part of the URL.
+  DISTRIBUTION_URL="$(echo "${DISTRIBUTION_URL}" | sed "s|^\([^/]*//\)[^/]*\(.*\)|\1${MVNW_REPOURL}\2|")"
+fi
+
+MAVEN_WRAPPER_JAR_PATH="${MAVEN_PROJECTBASEDIR}/${MAVEN_WRAPPER_JAR_FILENAME}"
+
+if [ ! -f "${MAVEN_WRAPPER_JAR_PATH}" ]; then
+  echo "Downloading the Maven Wrapper JAR from ${DISTRIBUTION_URL}..."
+  # We are using a temporary file to store the downloaded JAR file.
+  # This is to avoid a race condition where another process is trying to download the same file.
+  TMP_MAVEN_WRAPPER_JAR_PATH="${MAVEN_WRAPPER_JAR_PATH}.tmp"
+  if [ -n "$MVNW_USERNAME" ] && [ -n "$MVNW_PASSWORD" ]; then
+    # The user has specified a username and password for the custom repository.
+    # We will use the "curl" command to download the file.
+    # The "-u" option is used to specify the username and password.
+    # The "-f" option is used to fail silently on server errors.
+    # The "-L" option is used to follow redirects.
+    # The "-o" option is used to specify the output file.
+    curl -u "${MVNW_USERNAME}:${MVNW_PASSWORD}" -f -L -o "${TMP_MAVEN_WRAPPER_JAR_PATH}" "${DISTRIBUTION_URL}"
+  else
+    # We will use the "curl" command to download the file.
+    # The "-f" option is used to fail silently on server errors.
+    # The "-L" option is used to follow redirects.
+    # The "-o" option is used to specify the output file.
+    curl -f -L -o "${TMP_MAVEN_WRAPPER_JAR_PATH}" "${DISTRIBUTION_URL}"
+  fi
+  # We are moving the temporary file to the final destination.
+  # This is to avoid a race condition where another process is trying to download the same file.
+  mv "${TMP_MAVEN_WRAPPER_JAR_PATH}" "${MAVEN_WRAPPER_JAR_PATH}"
+fi
+
+if [ ! -r "${MAVEN_WRAPPER_JAR_PATH}" ]; then
+  echo "The file ${MAVEN_WRAPPER_JAR_PATH} is not readable."
+  exit 1
+fi
+
+if [ -z "$JAVA_HOME" ]; then
+  # The JAVA_HOME environment variable is not set.
+  # We will try to find the Java executable in the PATH.
+  JAVA_EXE="$(command -v java)"
+  if [ -z "$JAVA_EXE" ]; then
+    echo "The JAVA_HOME environment variable is not set, and the java command is not in the PATH."
+    exit 1
+  fi
 else
-  tar xzf${__MVNW_QUIET_TAR:+"$__MVNW_QUIET_TAR"} "$TMP_DOWNLOAD_DIR/$distributionUrlName" -C "$TMP_DOWNLOAD_DIR" || die "failed to untar"
+  # The JAVA_HOME environment variable is set.
+  # We will use the Java executable from the JAVA_HOME directory.
+  JAVA_EXE="${JAVA_HOME}/bin/java"
 fi
-printf %s\\n "$distributionUrl" >"$TMP_DOWNLOAD_DIR/$distributionUrlNameMain/mvnw.url"
-mv -- "$TMP_DOWNLOAD_DIR/$distributionUrlNameMain" "$MAVEN_HOME" || [ -d "$MAVEN_HOME" ] || die "fail to move MAVEN_HOME"
 
-clean || :
-exec_maven "$@"
+exec "${JAVA_EXE}" \
+  "-Dmaven.multiModuleProjectDirectory=${MAVEN_PROJECTBASEDIR}" \
+  -jar "${MAVEN_WRAPPER_JAR_PATH}" \
+  "$@"
+
+exit $?
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-
