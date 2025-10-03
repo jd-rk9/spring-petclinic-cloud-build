@@ -3,7 +3,7 @@ WORKDIR /app
 
 # Copy dependencies first (cache optimization)
 COPY ./pom.xml ./
-RUN ./mvnw dependency:go-offline -B
+# RUN ./mvnw dependency:go-offline -B
 # Build application
 COPY spring-petclinic/src ./src
 RUN ./mvnw clean package -DskipTests
