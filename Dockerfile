@@ -2,7 +2,7 @@ FROM eclipse-temurin:17-jdk AS builder
 WORKDIR /app
 
 # Copy dependencies first (cache optimization)
-COPY spring-petclinic/pom.xml ./
+COPY ./pom.xml ./
 RUN ./mvnw dependency:go-offline -B
 # Build application
 COPY spring-petclinic/src ./src
