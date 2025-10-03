@@ -5,7 +5,7 @@ WORKDIR /app
 COPY ./pom.xml ./
 # RUN ./mvnw dependency:go-offline -B
 # Build application
-COPY spring-petclinic/src ./src
+COPY ./src ./src
 RUN ./mvnw clean package -DskipTests
 # Stage 2: Runtime image
 FROM eclipse-temurin:17-jre
