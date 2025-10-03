@@ -35,3 +35,6 @@ substitutions:
 
 images:
 - '${_AR_HOST}/${PROJECT_ID}/${_REPO_NAME}/petclinic:$SHORT_SHA'
+
+options:
+  logging: CLOUD_LOGGING_ONLY
