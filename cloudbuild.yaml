@@ -1,0 +1,37 @@
+# cloudbuild.yaml
+steps:
+# 1. Build the Docker image
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-t', '${_AR_HOST}/${PROJECT_ID}/${_REPO_NAME}/petclinic:$SHORT_SHA', '.']
+
+# 2. Push the image to Artifact Registry
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['push', '${_AR_HOST}/${PROJECT_ID}/${_REPO_NAME}/petclinic:$SHORT_SHA']
+
+# 3. (Optional but recommended) Deploy to GKE
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: gcloud
+  args:
+  - 'container'
+  - 'clusters'
+  - 'get-credentials'
+  - 'gorilla-clinic-cluster'
+  - '--region'
+  - '${_GKE_REGION}'
+- name: 'gcr.io/cloud-builders/kubectl'
+  args:
+  - 'set'
+  - 'image'
+  - 'deployment/petclinic' # Assumes a deployment named 'petclinic'
+  - 'petclinic-app=${_AR_HOST}/${PROJECT_ID}/${_REPO_NAME}/petclinic:$SHORT_SHA'
+  env:
+  - 'CLOUDSDK_COMPUTE_REGION=${_GKE_REGION}'
+
+substitutions:
+  _AR_HOST: '${_GCP_REGION}-docker.pkg.dev'
+  _REPO_NAME: 'gorilla-clinic-repo'
+  _GCP_REGION: 'europe-west4' # Your region
+  _GKE_REGION: 'europe-west4' # Your region
+
+images:
+- '${_AR_HOST}/${PROJECT_ID}/${_REPO_NAME}/petclinic:$SHORT_SHA'
