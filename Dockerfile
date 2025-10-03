@@ -6,7 +6,7 @@ COPY ./pom.xml ./
 # RUN ./mvnw dependency:go-offline -B
 # Build application
 COPY ./src ./src
-RUN ./mvnw clean package -DskipTests
+RUN ./mvn clean package -DskipTests
 # Stage 2: Runtime image
 FROM eclipse-temurin:17-jre
 # Security: Run as non-root user
