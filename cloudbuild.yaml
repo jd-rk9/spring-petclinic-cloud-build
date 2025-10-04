@@ -1,48 +1,32 @@
-# Minimal Cloud Build config that runs the Spring Boot Maven build-image goal
-# This runs the project's Maven wrapper (if present) and uses Spring Boot's buildpacks
-# to create and publish an image. The image is set to gcr.io/$PROJECT_ID/spring-petclinic:$SHORT_SHA
+# Cloud Build pipeline: package with Maven, build Docker image (runtime-only Dockerfile), push to GCR
 steps:
-  - name: 'gcr.io/cloud-builders/git'
-    args: ['clone', 'https://github.com/jd-rk9/spring-petclinic-cloud-build.git', 'spring-petclinic-src']
-
+  # 1) Package the application using Maven (use the project's wrapper when present)
   - name: 'maven:3.9-eclipse-temurin-17'
     entrypoint: 'bash'
     args:
       - '-c'
       - |
-        # run the maven wrapper if present, otherwise fall back to mvn
+        set -e
+        chmod +x mvnw || true
         if [ -f mvnw ]; then
-          # Cloud Build pipeline: package with Maven, build Docker image (runtime-only Dockerfile), push to GCR
-          steps:
-            # 1) Package the application using Maven (prefer the project's wrapper when present)
-            - name: 'maven:3.9-eclipse-temurin-17'
-              entrypoint: 'bash'
-              args:
-                - '-c'
-                - |
-                  set -e
-                  chmod +x mvnw || true
-                  if [ -f mvnw ]; then
-                    ./mvnw -B -DskipTests package
-                  else
-                    mvn -B -DskipTests package
-                  fi
+          ./mvnw -B -DskipTests package
+        else
+          mvn -B -DskipTests package
+        fi
 
-            # 2) Build the Docker image using the runtime-only Dockerfile that copies target/*.jar
-            - name: 'gcr.io/cloud-builders/docker'
-              args: ['build', '-t', 'gcr.io/$PROJECT_ID/spring-petclinic:$SHORT_SHA', '.']
+  # 2) Build the Docker image using the runtime-only Dockerfile that copies target/*.jar
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/spring-petclinic:$SHORT_SHA', '.']
 
-            # 3) Push the image to Container Registry
-            - name: 'gcr.io/cloud-builders/docker'
-              args: ['push', 'gcr.io/$PROJECT_ID/spring-petclinic:$SHORT_SHA']
+  # 3) Push the image to Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$PROJECT_ID/spring-petclinic:$SHORT_SHA']
 
-          images:
-            - 'gcr.io/$PROJECT_ID/spring-petclinic:$SHORT_SHA'
+images:
+  - 'gcr.io/$PROJECT_ID/spring-petclinic:$SHORT_SHA'
 
-          timeout: '1800s'
-
-          options:
-            logging: CLOUD_LOGGING_ONLY
+timeout: '1800s'
 
 options:
   logging: CLOUD_LOGGING_ONLY
+
