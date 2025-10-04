@@ -2,8 +2,8 @@
 # This runs the project's Maven wrapper (if present) and uses Spring Boot's buildpacks
 # to create and publish an image. The image is set to gcr.io/$PROJECT_ID/spring-petclinic:$SHORT_SHA
 steps:
-  - name: 'cloner/git'
-    args: ['clone', 'https://github.com/jd-rk9/spring-petclinic-cloud-build.git', '.']
+  - name: 'gcr.io/cloud-builders/git'
+    args: ['clone', 'https://github.com/jd-rk9/spring-petclinic-cloud-build.git', 'spring-petclinic-src']
 
   - name: 'maven:3.9-eclipse-temurin-17'
     entrypoint: 'bash'
