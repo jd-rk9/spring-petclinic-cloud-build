@@ -1,58 +1,27 @@
-# Cloud Build pipeline for building and publishing the Spring PetClinic container
-
-# Strategy used:
-# 1. Use a Maven build step to produce the application JAR using the project's Maven wrapper.
-# 2. Build a Docker image using the repository's Dockerfile and tag it for Container Registry.
-# 3. Push the image to Container Registry (gcr.io/$PROJECT_ID).
-
-# This follows the README guidance to produce a container image for the application.
-
+# Minimal Cloud Build config that runs the Spring Boot Maven build-image goal
+# This runs the project's Maven wrapper (if present) and uses Spring Boot's buildpacks
+# to create and publish an image. The image is set to gcr.io/$PROJECT_ID/spring-petclinic:$SHORT_SHA
 steps:
-  # 1) Build the application artifact (jar) with Maven using the project's wrapper.
   - name: 'maven:3.9-eclipse-temurin-17'
     entrypoint: 'bash'
     args:
       - '-c'
       - |
-        # Ensure the wrapper is executable and run a reproducible build (skip tests for speed by default)
-        if [ -f mvnw ]; then chmod +x mvnw; ./mvnw -B -DskipTests package; else mvn -B -DskipTests package; fi
+        # run the maven wrapper if present, otherwise fall back to mvn
+        if [ -f mvnw ]; then
+          chmod +x mvnw
+          ./mvnw -B -DskipTests \
+            -Dspring-boot.build-image.imageName=gcr.io/$PROJECT_ID/spring-petclinic:$SHORT_SHA \
+            -Dspring-boot.build-image.publish=true \
+            spring-boot:build-image
+        else
+          mvn -B -DskipTests \
+            -Dspring-boot.build-image.imageName=gcr.io/$PROJECT_ID/spring-petclinic:$SHORT_SHA \
+            -Dspring-boot.build-image.publish=true \
+            spring-boot:build-image
+        fi
 
-  # 2) Build the container image using the repository Dockerfile and tag it for Container Registry
-  - name: 'gcr.io/cloud-builders/docker'
-    args:
-      - 'build'
-      - '-t'
-      - 'gcr.io/$PROJECT_ID/spring-petclinic:$SHORT_SHA'
-      - '.'
-
-  # 3) Push the image to Container Registry
-  - name: 'gcr.io/cloud-builders/docker'
-    args:
-      - 'push'
-      - 'gcr.io/$PROJECT_ID/spring-petclinic:$SHORT_SHA'
-
-# Tell Cloud Build which images this build will produce (used for artifact listing and permissions)
+# Declare the produced image so Cloud Build registers it
 images:
   - 'gcr.io/$PROJECT_ID/spring-petclinic:$SHORT_SHA'
 
-# Optional: increase timeout for slow builds (default is 10m). Uncomment to extend to 30 minutes.
-# timeout: '1800s'
-
-# Substitutions you can override when triggering the build (left as examples):
-# substitutions:
-#   _IMAGE: 'gcr.io/$PROJECT_ID/spring-petclinic'
-
-# Alternative: If you want to use the Spring Boot Maven plugin's build-image goal (buildpacks)
-# instead of the Dockerfile, you can replace the maven step with:
-#
-# - name: 'maven:3.9-eclipse-temurin-17'
-#   entrypoint: 'bash'
-#   args:
-#     - '-c'
-#     - |
-#       if [ -f mvnw ]; then chmod +x mvnw; ./mvnw -B -DskipTests spring-boot:build-image \
-#         -Dspring-boot.build-image.imageName=gcr.io/$PROJECT_ID/spring-petclinic:$SHORT_SHA \
-#         -Dspring-boot.build-image.publish=true; else mvn -B -DskipTests spring-boot:build-image ...; fi
-
-options:
-  logging: CLOUD_LOGGING_ONLY
