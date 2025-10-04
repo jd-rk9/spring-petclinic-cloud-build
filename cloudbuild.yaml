@@ -11,7 +11,7 @@ steps:
 
   # Step 2: Build the container image and push it to Container Registry.
   # We use a Maven builder image which has Java and Maven pre-installed.
-  # The command './mvnw spring-boot:build-image' uses Cloud Native Buildpacks
+  # The command 'spring-boot:build-image' uses Cloud Native Buildpacks
   # to create a container image without needing a Dockerfile.
   #
   # The '-Dspring-boot.build-image.imageName' flag sets the name and tag for the image.
@@ -20,7 +20,10 @@ steps:
   #
   # NOTE: The Spring Boot build-image goal requires the Docker daemon to be running.
   # Cloud Build runs each step with access to a Docker daemon, so this works out of the box.
+  # We explicitly set the entrypoint to 'mvn' to bypass the container's default
+  # entrypoint script which was causing issues with argument parsing.
   - name: 'maven:3.8.5-openjdk-17' # A container image with Maven and JDK 17
+    entrypoint: 'mvn'
     args:
       - '-f'
       - 'spring-petclinic/pom.xml'
