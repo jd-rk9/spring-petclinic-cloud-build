@@ -5,8 +5,8 @@ FROM maven:3.9-eclipse-temurin-17 AS build
 WORKDIR /app
 
 # Copy the Maven wrapper and pom.xml to leverage Docker layer caching
-COPY .mvn/ .mvn
-COPY mvnw pom.xml ./
+COPY .mvn .mvn
+COPY mvnw mvnw.cmd pom.xml ./
 
 # Download dependencies
 RUN ./mvnw dependency:go-offline
