@@ -2,6 +2,7 @@
 steps:
 # 1. Build and push the container image using Spring Boot's build-image goal
 - name: 'maven:3.9-eclipse-temurin-17'
+  dir: '.' # Explicitly set the working directory to the project root
   entrypoint: './mvnw'
   args:
     - 'spring-boot:build-image'
