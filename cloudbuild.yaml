@@ -33,4 +33,4 @@ steps:
 images:
   - 'gcr.io/${PROJECT_ID}/spring-petclinic'
 options:
-  cloudlogging: CLOUD_LOGGING_ONLY
+  logging: CLOUD_LOGGING_ONLY
