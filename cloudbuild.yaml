@@ -53,3 +53,6 @@ images:
 #       if [ -f mvnw ]; then chmod +x mvnw; ./mvnw -B -DskipTests spring-boot:build-image \
 #         -Dspring-boot.build-image.imageName=gcr.io/$PROJECT_ID/spring-petclinic:$SHORT_SHA \
 #         -Dspring-boot.build-image.publish=true; else mvn -B -DskipTests spring-boot:build-image ...; fi
+
+options:
+  logging: CLOUD_LOGGING_ONLY
