@@ -1,32 +1,34 @@
-# Cloud Build pipeline: package with Maven, build Docker image (runtime-only Dockerfile), push to GCR
+# This Cloud Build configuration file clones a Git repository,
+# builds a container image using the Spring Boot Maven plugin,
+# and pushes the image to Google Container Registry.
+
 steps:
-  # 1) Package the application using Maven (use the project's wrapper when present)
-  - name: 'maven:3.9-eclipse-temurin-17'
-    entrypoint: 'bash'
+  # Step 1: Clone the specified Git repository.
+  # We use the official git cloud builder for this.
+  - name: 'gcr.io/cloud-builders/git'
+    args: ['clone', 'https://github.com/spring-projects/spring-petclinic.git']
+    id: 'clone-repo'
+
+  # Step 2: Build the container image and push it to Container Registry.
+  # We use a Maven builder image which has Java and Maven pre-installed.
+  # The command './mvnw spring-boot:build-image' uses Cloud Native Buildpacks
+  # to create a container image without needing a Dockerfile.
+  #
+  # The '-Dspring-boot.build-image.imageName' flag sets the name and tag for the image.
+  # We use the $PROJECT_ID substitution to automatically target the current project's
+  # Container Registry.
+  #
+  # NOTE: The Spring Boot build-image goal requires the Docker daemon to be running.
+  # Cloud Build runs each step with access to a Docker daemon, so this works out of the box.
+  - name: 'maven:3.8.5-openjdk-17' # A container image with Maven and JDK 17
     args:
-      - '-c'
-      - |
-        set -e
-        chmod +x mvnw || true
-        if [ -f mvnw ]; then
-          ./mvnw -B -DskipTests package
-        else
-          mvn -B -DskipTests package
-        fi
+      - '-f'
+      - 'spring-petclinic/pom.xml'
+      - 'spring-boot:build-image'
+      - '-Dspring-boot.build-image.imageName=gcr.io/${PROJECT_ID}/spring-petclinic'
+    id: 'build-and-push-image'
 
-  # 2) Build the Docker image using the runtime-only Dockerfile that copies target/*.jar
-  - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '-t', 'gcr.io/$PROJECT_ID/spring-petclinic:$SHORT_SHA', '.']
-
-  # 3) Push the image to Container Registry
-  - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'gcr.io/$PROJECT_ID/spring-petclinic:$SHORT_SHA']
-
+# This section specifies the image(s) that will be created by this build.
+# Cloud Build can use this to show the image name in the build results.
 images:
-  - 'gcr.io/$PROJECT_ID/spring-petclinic:$SHORT_SHA'
-
-timeout: '1800s'
-
-options:
-  logging: CLOUD_LOGGING_ONLY
-
+  - 'gcr.io/${PROJECT_ID}/spring-petclinic'
