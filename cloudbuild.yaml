@@ -32,3 +32,5 @@ steps:
 # Cloud Build can use this to show the image name in the build results.
 images:
   - 'gcr.io/${PROJECT_ID}/spring-petclinic'
+options:
+  cloudlogging: CLOUD_LOGGING_ONLY
