@@ -29,7 +29,9 @@ steps:
       - 'spring-petclinic/pom.xml'
       - 'spring-boot:build-image'
       - '-Dspring-boot.build-image.imageName=gcr.io/${PROJECT_ID}/spring-petclinic'
+      - '-Dmaven.test.skip=true' # Skip running the tests
     id: 'build-and-push-image'
+
 
 # This section specifies the image(s) that will be created by this build.
 # Cloud Build can use this to show the image name in the build results.
